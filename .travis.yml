@@ -1,0 +1,23 @@
+language: python
+python:
+  - 2.7
+
+services:
+  - docker
+
+before_install:
+  - pip install awscli
+  - export PATH=$PATH:$HOME/.local/bin
+
+install:
+  - docker build -t chrisevett/newhiretest .
+  - docker run -d -p 80:80 --name newhiretest chrisevett/newhiretest
+
+# quality checks, make sure our container is running and we can ping it on 80 and get a 200
+script:
+  - docker ps | grep -q newhiretest 
+
+after_success:
+  - docker login -u$username -p$password
+  - docker push chrisevett/newhiretest
+  - ./ecs-deploy -c newhirecluster -n newhireservice -i chrisevett/newhiretest -v
